@@ -257,12 +257,12 @@ pub fn walk(
                         ActionType::SwapExactETHForTokens => {
                             let token_from_amount = data.token_from_amount.clone().unwrap();
                             let token_from_amount_value;
-                            if token_from_amount.clone().starts_with("$") {
-                                let tmp = vars.get(&data.right.clone().unwrap()).unwrap();
-                                if tmp.is_u64() {
-                                    token_from_amount_value = tmp.as_u64().unwrap();
+                            let vtmp = vars.get(&token_from_amount.clone());
+                            if token_from_amount.clone().starts_with("$") && !vtmp.is_none() {
+                                if vtmp.unwrap().is_u64() {
+                                    token_from_amount_value = vtmp.unwrap().as_u64().unwrap();
                                 } else {
-                                    panic!("Invalid token_from_amount var: {:?}", tmp);
+                                    panic!("Invalid token_from_amount var: {:?}", vtmp);
                                 }
                             } else if token_from_amount.clone().len() > 0 {
                                 let tmp = normalize_value(token_from_amount.clone());
