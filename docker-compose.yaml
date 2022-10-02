@@ -3,14 +3,12 @@ version: "3.8"
 services:
     anvil:
         image: ghcr.io/foundry-rs/foundry:nightly-841a1514e0c8384f9d9464459d914bdbba9a6e55
-        command: ["anvil", "--host", "0.0.0.0"]
+        command: ["anvil --host 0.0.0.0"]
         ports:
             - "8545:8545"
         expose:
             - 8545
         restart: "no"
-        environment:
-            - NVIL_IP_ADDR=0.0.0.0
         networks:
             - zapdefi
 
