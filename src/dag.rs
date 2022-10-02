@@ -256,8 +256,24 @@ pub fn walk(
                     match data.action_type.clone().unwrap() {
                         ActionType::SwapExactETHForTokens => {
                             let token_from_amount = data.token_from_amount.clone().unwrap();
-                            let token_from_amount_value = normalize_value(token_from_amount);
-                            let token_from_amount_value = token_from_amount_value.as_u64().unwrap();
+                            let token_from_amount_value;
+                            if data.right.clone().unwrap().starts_with("$") {
+                                let tmp = vars.get(&data.right.clone().unwrap()).unwrap();
+                                if tmp.is_u64() {
+                                    token_from_amount_value = tmp.as_u64().unwrap();
+                                } else {
+                                    panic!("Invalid token_from_amount var: {:?}", tmp);
+                                }
+                            } else if data.right.clone().unwrap().len() > 0 {
+                                let tmp = normalize_value(token_from_amount.clone());
+                                if tmp.is_i64() {
+                                    token_from_amount_value = tmp.as_u64().unwrap();
+                                } else {
+                                    panic!("Invalid token_from_amount: {:?}", tmp);
+                                }
+                            } else {
+                                panic!("Invalid token_from_amount: {:?}", token_from_amount);
+                            }
 
                             let token_from_address = data.token_from_address.clone().unwrap();
                             let token_to_address = data.token_to_address.clone().unwrap();
@@ -267,7 +283,8 @@ pub fn walk(
                                     token_from_address,
                                     token_to_address,
                                     token_from_amount_value,
-                                ).await;
+                                )
+                                .await;
                             });
                         },
                     }
@@ -319,6 +336,8 @@ fn normalize_value(s: String) -> Value {
         return Value::Bool(false);
     } else if let Ok(i) = s.parse::<i64>() {
         return Value::Number(Number::from(i));
+    } else if let Ok(i) = s.parse::<u64>() {
+        return Value::Number(Number::from(i));
     } else if let Ok(f) = s.parse::<f64>() {
         return Value::Number(Number::from_f64(f).unwrap());
     }
@@ -336,6 +355,9 @@ fn evaluate_arithmetic(
         return Value::Number(Number::from_f64(tmp).unwrap());
     } else if a.is_i64() && b.is_i64() {
         let tmp = evaluate_arithmetic_oprator(a.as_i64().unwrap(), b.as_i64().unwrap(), operator);
+        return Value::Number(Number::from(tmp));
+    } else if a.is_u64() && b.is_u64() {
+        let tmp = evaluate_arithmetic_oprator(a.as_u64().unwrap(), b.as_u64().unwrap(), operator);
         return Value::Number(Number::from(tmp));
     }
 
