@@ -18,7 +18,11 @@ services:
             context: .
             dockerfile: Dockerfile
         volumes:
-            - data:/usr/src/zapdefi/data
+            - data:/usr/src/zapdefi/data\
+        ports:
+            - "3001:3001"
+        expose:
+          - 3001
         depends_on:
             - anvil
         environment:
