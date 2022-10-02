@@ -9,6 +9,8 @@ services:
         expose:
             - 8545
         restart: "no"
+        environment:
+            - NVIL_IP_ADDR=0.0.0.0
         networks:
             - zapdefi
 
