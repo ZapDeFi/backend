@@ -24,7 +24,7 @@ COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./src ./src
 RUN mkdir -p /usr/src/zapdefi/data
-COPY ./data.json ./usr/src/zapdefi/data/data.json
+COPY ./data.json /usr/src/zapdefi/data/data.json
 RUN cargo build --release
 
 CMD [ "cargo", "run", "-r" ]
