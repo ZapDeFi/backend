@@ -257,14 +257,14 @@ pub fn walk(
                         ActionType::SwapExactETHForTokens => {
                             let token_from_amount = data.token_from_amount.clone().unwrap();
                             let token_from_amount_value;
-                            if data.right.clone().unwrap().starts_with("$") {
+                            if token_from_amount.clone().starts_with("$") {
                                 let tmp = vars.get(&data.right.clone().unwrap()).unwrap();
                                 if tmp.is_u64() {
                                     token_from_amount_value = tmp.as_u64().unwrap();
                                 } else {
                                     panic!("Invalid token_from_amount var: {:?}", tmp);
                                 }
-                            } else if data.right.clone().unwrap().len() > 0 {
+                            } else if token_from_amount.clone().len() > 0 {
                                 let tmp = normalize_value(token_from_amount.clone());
                                 if tmp.is_i64() {
                                     token_from_amount_value = tmp.as_u64().unwrap();
@@ -414,14 +414,13 @@ pub async fn swap_exact_eth_for_tokens(from_address: String, to_address: String,
         .estimate_gas(
             "swapExactETHForTokens",
             (
-                U256::from_dec_str("106662000000").unwrap(),
+                U256::from(from_amount),
                 vec![from_address, to_address],
                 account,
                 U256::from_dec_str(&valid_timestamp.to_string()).unwrap(),
             ),
             account,
             Options {
-                value: Some(U256::exp10(18).checked_div(20.into()).unwrap()),
                 gas: Some(500_000.into()),
                 ..Default::default()
             },
@@ -437,7 +436,7 @@ pub async fn swap_exact_eth_for_tokens(from_address: String, to_address: String,
         .unwrap()
         .encode_input(
             &(
-                U256::from_dec_str("106662000000").unwrap(),
+                U256::from(from_amount),
                 vec![from_address, to_address],
                 account,
                 U256::from_dec_str(&valid_timestamp.to_string()).unwrap(),
