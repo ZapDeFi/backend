@@ -34,10 +34,9 @@ async fn main() -> std::io::Result<()> {
     log::info!("Starting up");
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allowed_origin("*")
+            .allow_any_origin()
+            .send_wildcard()
             .allowed_methods(vec!["GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH", "HEAD"])
-            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-            .allowed_header(http::header::CONTENT_TYPE)
             .max_age(3600);
 
         App::new().configure(initialize).wrap(cors).wrap(middleware::Logger::default())
