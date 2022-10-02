@@ -5,7 +5,7 @@
 
 use actix_cors::Cors;
 use actix_web::web::{self};
-use actix_web::{http, middleware, App, HttpServer};
+use actix_web::{middleware, App, HttpServer};
 use anyhow::Context;
 use std::env;
 
