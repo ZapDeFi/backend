@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+    anvil:
+        image: ghcr.io/foundry-rs/foundry:nightly-841a1514e0c8384f9d9464459d914bdbba9a6e55
+        hostname: foundry
+        command: ["anvil"]
+        ports:
+            - "8545:8545"
+        expose:
+            - 8545
+        restart: "no"
+        networks:
+            - zapdefi
+
+    backend:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        volumes:
+            - "./:/usr/src/cloudenvapp"
+        depends_on:
+            - anvil
+
+networks:
+    zapdefi: {}

@@ -3,7 +3,6 @@ use num::Zero;
 use secp256k1::SecretKey;
 use serde::*;
 use serde_json::{Number, Value};
-use tokio::runtime::Runtime;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
@@ -37,119 +36,76 @@ enum ActionType {
     SwapExactETHForTokens,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde()]
 struct NodeData {
+    #[serde(skip_serializing_if = "Option::is_none")]
     left: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     right: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     operator: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     result: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     token_from_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     token_to_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     token_from_amount: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     action_type: Option<ActionType>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde()]
-struct Node {
+pub struct Node {
     id: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     children: Option<Vec<Edge>>,
     zap_type: ZapType,
+    #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<NodeData>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde()]
-struct Edge {
+pub struct Edge {
     id: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     condition: Option<Condition>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde()]
-struct Condition {
+pub struct Condition {
     right: String,
     left: String,
     operator: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DagNode {
     zap_type: ZapType,
+    #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<NodeData>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DagEdge {
+    #[serde(skip_serializing_if = "Option::is_none")]
     condition: Option<Condition>,
 }
 
-pub fn parse() -> (daggy::Dag<DagNode, DagEdge>, Option<daggy::NodeIndex<u32>>) {
-    let the_file = r#"[
-        {
-            "id": 1,
-            "zap_type": "ROOT",
-            "children": [
-                {
-                    "id": 2
-                },
-                {
-                    "id": 4
-                }
-            ]
-        },
-        {
-            "id": 2,
-            "zap_type": "ARITHMETIC",
-            "data": {
-                "operator": "+",
-                "left": "$a",
-                "right": "$b",
-                "result": "$c"
-            },
-            "children": [
-                {
-                    "id": 3,
-                    "condition": {
-                        "right": "$a",
-                        "left": "$b",
-                        "operator": "=="
-                    }
-                },
-                {
-                    "id": 4
-                }
-            ]
-        },
-        {
-            "id": 3,
-            "zap_type": "ARITHMETIC"
-        },
-        {
-            "id": 4,
-            "zap_type": "ACTION",
-            "data": {
-                "token_from_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-                "token_to_address": "0x4DF812F6064def1e5e029f1ca858777CC98D2D81",
-                "token_from_amount": "106662000000",
-                "action_type": "SWAP_EXACT_ETH_FOR_TOKENS"
-            }
-        }
-    ]"#;
-
-    let json: Vec<Node> = serde_json::from_str(the_file).expect("JSON was not well-formatted");
-
+pub fn parse(dag_data: Vec<Node>) -> (daggy::Dag<DagNode, DagEdge>, Option<daggy::NodeIndex<u32>>) {
     let mut dag = daggy::Dag::<DagNode, DagEdge, u32>::new();
 
     let mut nodes = Vec::new();
     let mut nodes_map = HashMap::new();
     let mut root_node_index: Option<daggy::NodeIndex<u32>> = None;
-    for node in &json {
-        let node_id = dag.add_node(DagNode {
-            zap_type: node.zap_type.clone(),
-            data: node.data.clone(),
-        });
+    for node in &dag_data {
+        let node_id =
+            dag.add_node(DagNode { zap_type: node.zap_type.clone(), data: node.data.clone() });
         nodes.push(node_id);
         nodes_map.insert(node.id, node_id);
 
@@ -158,7 +114,7 @@ pub fn parse() -> (daggy::Dag<DagNode, DagEdge>, Option<daggy::NodeIndex<u32>>) 
         }
     }
 
-    for node in &json {
+    for node in &dag_data {
         if let Some(children) = &node.children {
             for child in children {
                 let parent_index = nodes_map.get(&node.id).unwrap();
@@ -306,11 +262,13 @@ pub fn walk(
                             let token_from_address = data.token_from_address.clone().unwrap();
                             let token_to_address = data.token_to_address.clone().unwrap();
 
-                            Runtime::new().unwrap().block_on(swap_exact_eth_for_tokens(
-                                token_from_address,
-                                token_to_address,
-                                token_from_amount_value,
-                            ));
+                            tokio::spawn(async move {
+                                swap_exact_eth_for_tokens(
+                                    token_from_address,
+                                    token_to_address,
+                                    token_from_amount_value,
+                                ).await;
+                            });
                         },
                     }
                     done = true;
@@ -434,7 +392,7 @@ pub async fn swap_exact_eth_for_tokens(from_address: String, to_address: String,
         .estimate_gas(
             "swapExactETHForTokens",
             (
-                U256::from(from_amount),
+                U256::from_dec_str("106662000000").unwrap(),
                 vec![from_address, to_address],
                 account,
                 U256::from_dec_str(&valid_timestamp.to_string()).unwrap(),
@@ -457,7 +415,7 @@ pub async fn swap_exact_eth_for_tokens(from_address: String, to_address: String,
         .unwrap()
         .encode_input(
             &(
-                U256::from(from_amount),
+                U256::from_dec_str("106662000000").unwrap(),
                 vec![from_address, to_address],
                 account,
                 U256::from_dec_str(&valid_timestamp.to_string()).unwrap(),
@@ -466,7 +424,7 @@ pub async fn swap_exact_eth_for_tokens(from_address: String, to_address: String,
         )
         .expect("Failed to swapExactETHForTokens");
 
-    let nonce = web3s.eth().transaction_count(account, None).await.unwrap();
+    let nonce = web3s.eth().transaction_count(account, None).await.unwrap() + valid_timestamp;
     let transact_obj = TransactionParameters {
         nonce: Some(nonce),
         to: Some(router02_addr),

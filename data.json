@@ -1,0 +1,61 @@
+[
+    {
+        "id": 1,
+        "children": [
+            { "id": 2, "condition": null },
+            { "id": 4, "condition": null }
+        ],
+        "zap_type": "ROOT",
+        "data": null
+    },
+    {
+        "id": 2,
+        "children": [
+            {
+                "id": 3
+            },
+            { "id": 4, "condition": null }
+        ],
+        "zap_type": "ARITHMETIC",
+        "data": {
+            "left": "1",
+            "right": "4",
+            "operator": "+",
+            "result": "$c",
+            "token_from_address": null,
+            "token_to_address": null,
+            "token_from_amount": null,
+            "action_type": null
+        }
+    },
+    {
+        "id": 3,
+        "children": null,
+        "zap_type": "ARITHMETIC",
+        "data": {
+            "left": "$c",
+            "right": "4",
+            "operator": "+",
+            "result": "$c",
+            "token_from_address": null,
+            "token_to_address": null,
+            "token_from_amount": null,
+            "action_type": null
+        }
+    },
+    {
+        "id": 4,
+        "children": null,
+        "zap_type": "ACTION",
+        "data": {
+            "left": null,
+            "right": null,
+            "operator": null,
+            "result": null,
+            "token_from_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+            "token_to_address": "0x4DF812F6064def1e5e029f1ca858777CC98D2D81",
+            "token_from_amount": "106662000000",
+            "action_type": "SWAP_EXACT_ETH_FOR_TOKENS"
+        }
+    }
+]
