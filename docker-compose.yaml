@@ -3,7 +3,7 @@ version: "3.8"
 services:
     anvil:
         image: ghcr.io/foundry-rs/foundry:nightly-841a1514e0c8384f9d9464459d914bdbba9a6e55
-        hostname: foundry
+        hostname: anvil
         command: ["anvil"]
         ports:
             - "8545:8545"
@@ -18,9 +18,20 @@ services:
             context: .
             dockerfile: Dockerfile
         volumes:
-            - "./:/usr/src/cloudenvapp"
+            - data:/usr/src/zapdefi/data
         depends_on:
             - anvil
+        environment:
+            - DATABASE_URL=postgres://root:root@localhost:5432/zapdefi
+            - LISTEN_ADDRESS=0.0.0.0:3001
+            - ACCOUNT_ADDRESS=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+            - ROUTER02_ADDRESS=0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
+            - PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+            - PROVIDER_URL=http://anvil:8545
+            - DATA_FILE_PATH=/usr/src/zapdefi/data/data.json
 
 networks:
     zapdefi: {}
+
+volumes:
+  data:
